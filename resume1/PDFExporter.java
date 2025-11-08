@@ -4,157 +4,135 @@ import javax.swing.*;
 
 public class PDFExporter {
     public static void exportResumeToPDF(Resume resume, String filePath) throws Exception {
-        // Create a printable component for the resume
         PrintableResume printableResume = new PrintableResume(resume);
-        
-        // Get a PrinterJob
         PrinterJob job = PrinterJob.getPrinterJob();
         job.setPrintable(printableResume);
-        
-        // Show print dialog
+
         if (job.printDialog()) {
-            // Set the file output format to PDF
+            JOptionPane.showMessageDialog(null,
+                "Select 'Microsoft Print to PDF' or any PDF printer and save to:\n" + filePath,
+                "Print to PDF", JOptionPane.INFORMATION_MESSAGE);
             job.print();
-            
-            // For actual PDF file creation, we'll use pageable and create a PDF file
-            // Note: This creates a print-ready document that can be saved as PDF
-            // when user selects "Microsoft Print to PDF" or similar PDF printer
-            JOptionPane.showMessageDialog(null, 
-                "Please select 'Microsoft Print to PDF' or your PDF printer from the printer list.\n" +
-                "Then save the file to: " + filePath,
-                "Print to PDF", 
-                JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }
 
 class PrintableResume implements Printable {
     private Resume resume;
-    
+
     public PrintableResume(Resume resume) {
         this.resume = resume;
     }
-    
+
     @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-        if (pageIndex > 0) {
-            return NO_SUCH_PAGE;
-        }
+        if (pageIndex > 0) return NO_SUCH_PAGE;
 
         Graphics2D g2d = (Graphics2D) graphics;
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-        
-        // Set font and color
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
-        g2d.setColor(Color.BLACK);
-        
-        int y = 50;
-        int margin = 50;
-        
-        // Title
-        g2d.drawString("PROFESSIONAL RESUME", margin, y);
-        y += 30;
-        
-        // Personal Information
-        g2d.setFont(new Font("Arial", Font.BOLD, 14));
-        g2d.drawString("PERSONAL INFORMATION", margin, y);
-        y += 20;
-        
-        g2d.setFont(new Font("Arial", Font.PLAIN, 12));
-        if (resume.getFullName() != null && !resume.getFullName().isEmpty()) {
-            g2d.drawString("Name: " + resume.getFullName(), margin, y);
-            y += 15;
-        }
-        if (resume.getEmail() != null && !resume.getEmail().isEmpty()) {
-            g2d.drawString("Email: " + resume.getEmail(), margin, y);
-            y += 15;
-        }
-        if (resume.getPhone() != null && !resume.getPhone().isEmpty()) {
-            g2d.drawString("Phone: " + resume.getPhone(), margin, y);
-            y += 15;
-        }
-        if (resume.getAddress() != null && !resume.getAddress().isEmpty()) {
-            g2d.drawString("Address: " + resume.getAddress(), margin, y);
-            y += 15;
-        }
-        if (resume.getLinkedIn() != null && !resume.getLinkedIn().isEmpty()) {
-            g2d.drawString("LinkedIn: " + resume.getLinkedIn(), margin, y);
-            y += 15;
-        }
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int width = (int) pageFormat.getImageableWidth();
+        int y = 60;
+
+        // === HEADER BACKGROUND ===
+        g2d.setColor(new Color(33, 97, 140)); // Deep Blue
+        g2d.fillRect(0, 0, width, 80);
+
+        // === NAME ===
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 26));
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(resume.getFullName().toUpperCase(), 50, 45);
+
+        // === CONTACT INFO ===
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g2d.drawString(resume.getEmail() + " | " + resume.getPhone(), 50, 65);
+        g2d.drawString(resume.getLinkedIn() != null ? resume.getLinkedIn() : "", 300, 65);
+
+        y = 110;
+
+      
         if (resume.getSummary() != null && !resume.getSummary().isEmpty()) {
-            g2d.drawString("Summary: " + resume.getSummary(), margin, y);
-            y += 20;
+            y = drawSectionTitle(g2d, "OBJECTIVE", y);
+            y = drawMultilineText(g2d, resume.getSummary(), 50, y + 10, 70);
         }
-        
-        y += 10;
-        
-        // Education
+
+       
         if (!resume.getEducation().isEmpty()) {
-            g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            g2d.drawString("EDUCATION", margin, y);
-            y += 20;
-            
-            g2d.setFont(new Font("Arial", Font.PLAIN, 12));
+            y = drawSectionTitle(g2d, "EDUCATION", y + 15);
+            g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            g2d.setColor(Color.DARK_GRAY); // ✅ Make text visible and consistent
             for (Education edu : resume.getEducation()) {
-                g2d.drawString("• " + edu.toString(), margin, y);
-                y += 15;
-            }
-            y += 5;
-        }
-        
-        // Experience
+                 g2d.drawString("• " + edu.toString(), 60, y += 18);
+    }
+}
+
+        // === EXPERIENCE ===
         if (!resume.getExperience().isEmpty()) {
-            g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            g2d.drawString("EXPERIENCE", margin, y);
-            y += 20;
-            
-            g2d.setFont(new Font("Arial", Font.PLAIN, 12));
+            y = drawSectionTitle(g2d, "EXPERIENCE", y + 25);
+            g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
             for (Experience exp : resume.getExperience()) {
-                String[] lines = splitString(exp.toString(), 80);
-                for (String line : lines) {
-                    g2d.drawString(line, margin, y);
-                    y += 15;
-                }
-                y += 5;
+                y = drawMultilineText(g2d, "• " + exp.toString(), 60, y + 10, 75);
             }
         }
-        
-        // Skills
+
+        // === SKILLS ===
+        // === SKILLS ===
         if (!resume.getSkills().isEmpty()) {
-            g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            g2d.drawString("SKILLS", margin, y);
-            y += 20;
-            
-            g2d.setFont(new Font("Arial", Font.PLAIN, 12));
-            for (String skill : resume.getSkills()) {
-                g2d.drawString("• " + skill, margin, y);
-                y += 15;
-            }
+            y = drawSectionTitle(g2d, "SKILLS", y + 15);
+    
+            g2d.setColor(Color.DARK_GRAY); // ✅ Reset color to dark gray for visibility
+            g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+    
+        int x = 60;
+        int count = 0;
+        for (String skill : resume.getSkills()) {
+            g2d.drawString("• " + skill, x, y += 18);
+            count++;
+            if (count % 2 == 0) {
+                 x = 60;
+             } else {
+                x = 300;
+                y -= 18;
         }
-        
+    }
+}
+
+        // === FOOTER LINE ===
+        g2d.setColor(new Color(180, 180, 180));
+        g2d.drawLine(50, (int) pageFormat.getImageableHeight() - 30, width - 50, (int) pageFormat.getImageableHeight() - 30);
+        g2d.setFont(new Font("SansSerif", Font.ITALIC, 10));
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.drawString("Generated using Java Resume Builder © 2025", 50, (int) pageFormat.getImageableHeight() - 15);
+
         return PAGE_EXISTS;
     }
-    
-    private String[] splitString(String text, int maxLength) {
-        if (text.length() <= maxLength) {
-            return new String[]{text};
-        }
-        
-        java.util.List<String> lines = new java.util.ArrayList<>();
-        int start = 0;
-        while (start < text.length()) {
-            int end = Math.min(start + maxLength, text.length());
-            if (end < text.length()) {
-                // Try to break at a space
-                int breakPoint = text.lastIndexOf(' ', end);
-                if (breakPoint > start) {
-                    end = breakPoint;
-                }
+
+    // Draw colored section title
+    private int drawSectionTitle(Graphics2D g2d, String title, int y) {
+        g2d.setColor(new Color(33, 97, 140)); // blue
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 15));
+        g2d.drawString(title, 50, y);
+        g2d.setColor(new Color(200, 200, 200));
+        g2d.drawLine(50, y + 3, 550, y + 3);
+        return y + 20;
+    }
+
+    // Draw long text properly wrapped
+    private int drawMultilineText(Graphics2D g2d, String text, int x, int y, int maxCharsPerLine) {
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g2d.setColor(Color.DARK_GRAY);
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+        for (String word : words) {
+            if (line.length() + word.length() > maxCharsPerLine) {
+                g2d.drawString(line.toString(), x, y);
+                y += 15;
+                line = new StringBuilder();
             }
-            lines.add(text.substring(start, end).trim());
-            start = end + 1;
+            line.append(word).append(" ");
         }
-        
-        return lines.toArray(new String[0]);
+        g2d.drawString(line.toString(), x, y);
+        return y + 10;
     }
 }
